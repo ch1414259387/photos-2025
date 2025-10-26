@@ -1,0 +1,1355 @@
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhotoGallery - 个人照片存储与展示</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 统一的 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#64748b',
+            dark: '#0f172a',
+            light: '#f8fafc',
+            accent: '#f43f5e'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
+            'scroll-left': 'scrollLeft 30s linear infinite',
+            'scroll-right': 'scrollRight 30s linear infinite',
+          },
+          keyframes: {
+            scrollLeft: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' }
+            },
+            scrollRight: {
+              '0%': { transform: 'translateX(-50%)' },
+              '100%': { transform: 'translateX(0)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      }
+      .backdrop-blur-xs {
+        backdrop-filter: blur(2px);
+      }
+    }
+  </style>
+  <style>
+    /* 自定义样式 */
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    
+    .lazy-image {
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+    
+    .lazy-image.loaded {
+      opacity: 1;
+    }
+    
+    .skeleton {
+      background: linear-gradient(90deg, #2a3342 25%, #334155 50%, #2a3342 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+    }
+    
+    @keyframes skeleton-loading {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      overflow: hidden;
+    }
+    
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90%;
+      max-height: 90%;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    
+    .modal-nav {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+      z-index: 1001;
+    }
+    
+    .modal-nav button {
+      background-color: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      font-size: 30px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .modal-nav button:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .upload-progress {
+      height: 4px;
+      background-color: #334155;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .upload-progress-bar {
+      height: 100%;
+      background-color: #3b82f6;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .album-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .album-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .photo-item {
+      transition: transform 0.3s ease, filter 0.3s ease;
+      filter: grayscale(10%);
+    }
+    
+    .photo-item:hover {
+      transform: scale(1.03);
+      filter: grayscale(0%);
+    }
+    
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    
+    .btn-secondary {
+      background-color: #64748b;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #475569;
+    }
+    
+    .btn-outline {
+      border: 1px solid #64748b;
+      color: #f8fafc;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    .btn-outline:hover {
+      background-color: #64748b;
+      color: white;
+    }
+    
+    /* 毛玻璃玻璃金属按钮 */
+    .glass-btn {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0.5rem;
+      padding: 1px;
+      background: linear-gradient(to bottom right, rgba(100, 116, 139, 0.8), rgba(71, 85, 105, 0.8));
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    
+    .glass-btn::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      height: 12px;
+      width: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      filter: blur(4px);
+      transition: all 0.3s ease;
+    }
+    
+    .glass-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: -4px;
+      height: 10px;
+      width: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      filter: blur(4px);
+      transition: all 0.3s ease;
+    }
+    
+    .glass-btn:hover::before {
+      height: 16px;
+      width: 16px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+    
+    .glass-btn:hover::after {
+      height: 14px;
+      width: 14px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .glass-btn-content {
+      position: relative;
+      z-index: 10;
+      padding: 0.5rem 1.25rem;
+      background-color: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      border-radius: 0.375rem;
+      border: 1px solid rgba(100, 116, 139, 0.7);
+      color: #f1f5f9;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .glass-btn:hover .glass-btn-content {
+      background-color: rgba(15, 23, 42, 0.6);
+    }
+    
+    /* 状态指示灯效果 */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background-color: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      border-radius: 0.5rem;
+      border: 1px solid rgba(100, 116, 139, 0.7);
+    }
+    
+    .status-light {
+      height: 0.75rem;
+      width: 0.75rem;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.8);
+      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .status-light::after {
+      content: '';
+      position: absolute;
+      height: 0.75rem;
+      width: 0.75rem;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.3);
+      animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    
+    /* 瀑布流布局 */
+    .masonry-grid {
+      column-count: 1;
+      column-gap: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+      .masonry-grid {
+        column-count: 2;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      .masonry-grid {
+        column-count: 3;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .masonry-grid {
+        column-count: 4;
+      }
+    }
+    
+    .masonry-item {
+      break-inside: avoid;
+      margin-bottom: 1rem;
+    }
+    
+    /* 无限滚动标签 */
+    .infinite-scroll {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    .infinite-scroll-content {
+      display: flex;
+      animation: scrollLeft 30s linear infinite;
+    }
+    
+    .infinite-scroll-content-reverse {
+      display: flex;
+      animation: scrollRight 30s linear infinite;
+    }
+    
+    .infinite-scroll-mask {
+      position: absolute;
+      top: 0;
+      width: 6rem;
+      height: 100%;
+      z-index: 10;
+    }
+    
+    .infinite-scroll-mask-left {
+      left: 0;
+      background: linear-gradient(to right, #0f172a, transparent);
+    }
+    
+    .infinite-scroll-mask-right {
+      right: 0;
+      background: linear-gradient(to left, #0f172a, transparent);
+    }
+    
+    /* 上传区域样式 */
+    .upload-area {
+      border: 2px dashed #64748b;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      transition: border-color 0.3s ease, background-color 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #3b82f6;
+      background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    /* 照片查看器样式 */
+    .photo-viewer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .photo-viewer-content {
+      position: relative;
+      max-width: 90%;
+      max-height: 80%;
+    }
+    
+    .photo-viewer-image {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+    
+    .photo-viewer-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    
+    .photo-viewer-nav {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+      z-index: 1001;
+    }
+    
+    .photo-viewer-nav button {
+      background-color: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      font-size: 30px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .photo-viewer-nav button:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .photo-viewer-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .photo-viewer-content:hover .photo-viewer-info {
+      transform: translateY(0);
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+      .desktop-menu {
+        display: none;
+      }
+      
+      .mobile-menu {
+        display: block;
+      }
+      
+      .modal-content {
+        max-width: 95%;
+        max-height: 85%;
+      }
+      
+      .photo-viewer-content {
+        max-width: 95%;
+      }
+    }
+    
+    @media (min-width: 769px) {
+      .desktop-menu {
+        display: flex;
+      }
+      
+      .mobile-menu {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-dark text-light">
+  <!-- 导航栏 -->
+  <header class="sticky top-0 z-50 bg-dark/80 backdrop-blur-md border-b border-gray-800">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2">
+          <i class="fa fa-camera-retro text-primary text-2xl"></i>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">PhotoGallery</h1>
+        </div>
+        
+        <!-- 桌面端导航菜单（已移除“相册”入口） -->
+        <nav class="desktop-menu items-center space-x-6">
+          <a href="#" class="nav-link active" data-page="home">首页</a>
+        </nav>
+        
+        <!-- 搜索框 -->
+        <div class="hidden md:flex items-center bg-gray-800 rounded-full px-3 py-1.5 w-64">
+          <i class="fa fa-search text-gray-400 mr-2"></i>
+          <input type="text" id="search-input" placeholder="搜索照片或相册..." class="bg-transparent border-none outline-none text-sm w-full">
+        </div>
+        
+
+        
+        <!-- 移动端菜单按钮 -->
+        <button id="mobile-menu-button" class="mobile-menu text-gray-300 hover:text-white focus:outline-none">
+          <i class="fa fa-bars text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- 移动端搜索框 -->
+      <div class="mt-3 md:hidden flex items-center bg-gray-800 rounded-full px-3 py-1.5">
+        <i class="fa fa-search text-gray-400 mr-2"></i>
+        <input type="text" id="mobile-search-input" placeholder="搜索照片或相册..." class="bg-transparent border-none outline-none text-sm w-full">
+      </div>
+      
+      <!-- 移动端导航菜单 -->
+      <div id="mobile-menu" class="mobile-menu mt-3 pb-3 hidden">
+        <nav class="flex flex-col space-y-3">
+          <a href="#" class="mobile-nav-link active" data-page="home">首页</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区域 -->
+  <main class="container mx-auto px-4 py-6">
+    <!-- 页面内容区域 -->
+    <div id="page-content">
+      <!-- 首页内容 -->
+      <div id="home-page" class="page-content">
+        <!-- 欢迎横幅 -->
+        <div class="relative rounded-xl overflow-hidden mb-8">
+          <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30 z-10"></div>
+          <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D" alt="风景照片" class="w-full h-64 object-cover">
+          <div class="absolute inset-0 z-20 flex flex-col justify-center px-8 items-center text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white text-shadow-lg mb-2">欢迎的私人相册</h2>
+            <p class="text-gray-200 text-shadow max-w-md">存储和展示您的珍贵回忆，随时随地的照片值得最好的展示方式。</p>
+          </div>
+        </div>
+        
+        <!-- 最近上传模块已移除 -->
+        
+        <!-- 所有图片（替代原“我的相册”模块） -->
+        <div class="mb-10 w-full">
+          <div class="flex justify-between items-center mb-4 w-full">
+            <h2 class="text-xl font-bold">所有图片</h2>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <!-- 使用现有 photoData 的缩略图 -->
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="1">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D" alt="山脉照片" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="2">
+              <img src="https://p26-doubao-search-sign.byteimg.com/labis/d0c54438d29840d2f6d1f776a7414e24~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=eY5YpMR867cayH4jf9gcPYiKUuI%3D" alt="山脉全景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="3">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1924418594453848071~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=Eh4ljYxyM7LrYX5xoeONbLgPi6U%3D" alt="雪山风景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="4">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2070216533587001352~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jbNkP8fn32dj62h%2Fqp1YOIaSVWA%3D" alt="山脉风景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="5">
+              <img src="https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2223792452227301418~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=vAw4ef3oR24q5j2vgwaHiAMHyx4%3D" alt="尼泊尔山脉" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="6">
+              <img src="https://p3-doubao-search-sign.byteimg.com/labis/d2e92ca1907969d408ae1decc50a11ee~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=D0gjpqQ3GW%2FrScHrXByoBfyzGbw%3D" alt="海滩风景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="7">
+              <img src="https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2291709027791011854~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=5HSCntGsZkmW37%2F0JgWs3mHUXZc%3D" alt="海边风景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="8">
+              <img src="https://p3-doubao-search-sign.byteimg.com/labis/dcc31db67ea767ec1375553e666d39b3~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=EaHK7clBXqD9s8hpJbibjdV9pAI%3D" alt="海滨风光" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="9">
+              <img src="https://p11-doubao-search-sign.byteimg.com/pgc-image/3d2c1ab91f794420b8ac27a0b15f2a29~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=p9Pxy9%2BZmY1u6ogTQNO0GvWi42o%3D" alt="城市夜景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="10">
+              <img src="https://p11-doubao-search-sign.byteimg.com/labis/29ec78d26f9d4e47e139d737ef51622e~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=iI7bCjnKoOqeQ24bdN1ZQDwjpSQ%3D" alt="城市街景" class="w-full h-32 object-cover lazy-image">
+            </div>
+            <div class="photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="11">
+              <img src="https://p11-doubao-search-sign.byteimg.com/pgc-image/5baaba1c30cc4151960ba169a01c8380~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=vuq5ttz05mEwwOs7JVyYBCKz%2Bvo%3D" alt="城市黄昏" class="w-full h-32 object-cover lazy-image">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 相册详情页 -->
+      <div id="albums-page" class="page-content hidden">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold mb-2">所有照片</h2>
+          <p class="text-gray-400">浏览和管理您的所有照片</p>
+        </div>
+        
+        <!-- 相册筛选 -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div class="flex items-center space-x-4">
+            <select id="album-filter" class="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm">
+              <option value="all">所有相册</option>
+              <option value="1">山脉风光</option>
+              <option value="2">海滩度假</option>
+              <option value="3">城市夜景</option>
+            </select>
+          </div>
+          
+          <div class="flex items-center space-x-3">
+            <button id="advanced-filter-btn" class="btn-outline text-sm flex items-center">
+              <i class="fa fa-filter mr-1"></i> 筛选
+            </button>
+            <button id="sort-btn" class="btn-outline text-sm flex items-center">
+              <i class="fa fa-sort mr-1"></i> 排序
+            </button>
+          </div>
+        </div>
+        
+        <!-- 网格视图 -->
+        <div id="grid-view" class="masonry-grid">
+          <!-- 山脉照片 -->
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="1" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D" alt="山脉照片" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="2" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/labis/d0c54438d29840d2f6d1f776a7414e24~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=eY5YpMR867cayH4jf9gcPYiKUuI%3D" alt="山脉全景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="3" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1924418594453848071~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=Eh4ljYxyM7LrYX5xoeONbLgPi6U%3D" alt="雪山风景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="4" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2070216533587001352~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jbNkP8fn32dj62h%2Fqp1YOIaSVWA%3D" alt="山脉风景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="5" data-album-id="1">
+            <img src="https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2223792452227301418~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=vAw4ef3oR24q5j2vgwaHiAMHyx4%3D" alt="尼泊尔山脉" class="w-full object-cover lazy-image">
+          </div>
+          
+          <!-- 海滩照片 -->
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="6" data-album-id="2">
+            <img src="https://p3-doubao-search-sign.byteimg.com/labis/d2e92ca1907969d408ae1decc50a11ee~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=D0gjpqQ3GW%2FrScHrXByoBfyzGbw%3D" alt="海滩风景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="7" data-album-id="2">
+            <img src="https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2291709027791011854~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=5HSCntGsZkmW37%2F0JgWs3mHUXZc%3D" alt="海边风景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="8" data-album-id="2">
+            <img src="https://p3-doubao-search-sign.byteimg.com/labis/dcc31db67ea767ec1375553e666d39b3~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=EaHK7clBXqD9s8hpJbibjdV9pAI%3D" alt="海滨风光" class="w-full object-cover lazy-image">
+          </div>
+          
+          <!-- 城市夜景照片 -->
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="9" data-album-id="3">
+            <img src="https://p11-doubao-search-sign.byteimg.com/pgc-image/3d2c1ab91f794420b8ac27a0b15f2a29~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=p9Pxy9%2BZmY1u6ogTQNO0GvWi42o%3D" alt="城市夜景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="10" data-album-id="3">
+            <img src="https://p11-doubao-search-sign.byteimg.com/labis/29ec78d26f9d4e47e139d737ef51622e~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=iI7bCjnKoOqeQ24bdN1ZQDwjpSQ%3D" alt="城市街景" class="w-full object-cover lazy-image">
+          </div>
+          <div class="masonry-item photo-item rounded-md overflow-hidden cursor-pointer" data-photo-id="11" data-album-id="3">
+            <img src="https://p11-doubao-search-sign.byteimg.com/pgc-image/5baaba1c30cc4151960ba169a01c8380~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020075&amp;x-signature=vuq5ttz05mEwwOs7JVyYBCKz%2Bvo%3D" alt="城市黄昏" class="w-full object-cover lazy-image">
+          </div>
+        </div>
+        
+        <!-- 列表视图 -->
+        <div id="list-view" class="hidden space-y-4">
+          <!-- 山脉照片 -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer photo-item" data-photo-id="1" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D" alt="山脉照片" class="w-24 h-24 object-cover rounded-md mr-4 mb-3 sm:mb-0 lazy-image">
+            <div class="flex-grow">
+              <h3 class="font-medium">山脉照片</h3>
+              <p class="text-gray-400 text-sm">拍摄于 2023-07-15</p>
+              <p class="text-gray-500 text-xs mt-1">山脉风光相册</p>
+            </div>
+            <div class="flex items-center space-x-3 mt-3 sm:mt-0">
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-heart-o"></i>
+              </button>
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-share-alt"></i>
+              </button>
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-ellipsis-v"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row items-start sm:items-center p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer photo-item" data-photo-id="2" data-album-id="1">
+            <img src="https://p26-doubao-search-sign.byteimg.com/labis/d0c54438d29840d2f6d1f776a7414e24~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&amp;x-expires=1777020076&amp;x-signature=eY5YpMR867cayH4jf9gcPYiKUuI%3D" alt="山脉全景" class="w-24 h-24 object-cover rounded-md mr-4 mb-3 sm:mb-0 lazy-image">
+            <div class="flex-grow">
+              <h3 class="font-medium">山脉全景</h3>
+              <p class="text-gray-400 text-sm">拍摄于 2023-07-14</p>
+              <p class="text-gray-500 text-xs mt-1">山脉风光相册</p>
+            </div>
+            <div class="flex items-center space-x-3 mt-3 sm:mt-0">
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-heart-o"></i>
+              </button>
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-share-alt"></i>
+              </button>
+              <button class="text-gray-400 hover:text-white">
+                <i class="fa fa-ellipsis-v"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- 更多照片项... -->
+        </div>
+      </div>
+      
+  </div></main>
+
+  <!-- 页脚 -->
+  <footer class="bg-gray-900 border-t border-gray-800 py-8 mt-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-2 mb-4">
+            <i class="fa fa-camera-retro text-primary text-xl"></i>
+            <h3 class="text-lg font-bold">PhotoGallery</h3>
+          </div>
+          <p class="text-gray-400 text-sm">您的私人照片存储与展示平台，让您的珍贵回忆永远保存。</p>
+        </div>
+        
+        <div>
+          <h3 class="font-medium mb-4">快速链接</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#" class="text-gray-400 hover:text-white" onclick="navigateTo('home')">首页</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white" onclick="navigateTo('home')">所有图片</a></li>
+            
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-medium mb-4">联系我们</h3>
+          <ul class="space-y-2 text-sm">
+            <li class="flex items-center">
+              <i class="fa fa-envelope text-gray-400 mr-2"></i>
+              <a href="mailto:support@photogallery.com" class="text-gray-400 hover:text-white">support@photogallery.com</a>
+            </li>
+            <li class="flex items-center">
+              <i class="fa fa-phone text-gray-400 mr-2"></i>
+              <span class="text-gray-400">+86 123 4567 8901</span>
+            </li>
+          </ul>
+          
+          <!-- 社交媒体图标已删除 -->
+        </div>
+      </div>
+      
+      <div class="mt-8 pt-6 border-t border-gray-800 text-center text-gray-500 text-sm">
+        <p>© 2023 PhotoGallery. 保留所有权利。</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 照片查看器 -->
+  <div id="photo-viewer" class="photo-viewer">
+    <span class="photo-viewer-close">×</span>
+    <div class="photo-viewer-nav">
+      <button class="photo-viewer-prev"><i class="fa fa-angle-left"></i></button>
+      <button class="photo-viewer-next"><i class="fa fa-angle-right"></i></button>
+    </div>
+    <div class="photo-viewer-content">
+      <img class="photo-viewer-image" src="" alt="照片预览">
+      <div class="photo-viewer-info">
+        <h3 class="font-medium">照片标题</h3>
+        <p class="text-sm text-gray-300">拍摄于 2023-07-15</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 创建相册模态框已移除（随“我的相册”模块一并删除） -->
+
+  <!-- JavaScript -->
+  <script>
+    // 模拟数据
+    const photoData = [
+      {
+        id: 1,
+        url: "https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D",
+        title: "山脉照片",
+        date: "2023-07-15",
+        albumId: 1,
+        albumName: "山脉风光"
+      },
+      {
+        id: 2,
+        url: "https://p26-doubao-search-sign.byteimg.com/labis/d0c54438d29840d2f6d1f776a7414e24~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=eY5YpMR867cayH4jf9gcPYiKUuI%3D",
+        title: "山脉全景",
+        date: "2023-07-14",
+        albumId: 1,
+        albumName: "山脉风光"
+      },
+      {
+        id: 3,
+        url: "https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1924418594453848071~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=Eh4ljYxyM7LrYX5xoeONbLgPi6U%3D",
+        title: "雪山风景",
+        date: "2023-07-13",
+        albumId: 1,
+        albumName: "山脉风光"
+      },
+      {
+        id: 4,
+        url: "https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2070216533587001352~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=jbNkP8fn32dj62h%2Fqp1YOIaSVWA%3D",
+        title: "山脉风景",
+        date: "2023-07-12",
+        albumId: 1,
+        albumName: "山脉风光"
+      },
+      {
+        id: 5,
+        url: "https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2223792452227301418~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=vAw4ef3oR24q5j2vgwaHiAMHyx4%3D",
+        title: "尼泊尔山脉",
+        date: "2023-07-11",
+        albumId: 1,
+        albumName: "山脉风光"
+      },
+      {
+        id: 6,
+        url: "https://p3-doubao-search-sign.byteimg.com/labis/d2e92ca1907969d408ae1decc50a11ee~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=D0gjpqQ3GW%2FrScHrXByoBfyzGbw%3D",
+        title: "海滩风景",
+        date: "2023-06-28",
+        albumId: 2,
+        albumName: "海滩度假"
+      },
+      {
+        id: 7,
+        url: "https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2291709027791011854~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=5HSCntGsZkmW37%2F0JgWs3mHUXZc%3D",
+        title: "海边风景",
+        date: "2023-06-27",
+        albumId: 2,
+        albumName: "海滩度假"
+      },
+      {
+        id: 8,
+        url: "https://p3-doubao-search-sign.byteimg.com/labis/dcc31db67ea767ec1375553e666d39b3~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=EaHK7clBXqD9s8hpJbibjdV9pAI%3D",
+        title: "海滨风光",
+        date: "2023-06-26",
+        albumId: 2,
+        albumName: "海滩度假"
+      },
+      {
+        id: 9,
+        url: "https://p11-doubao-search-sign.byteimg.com/pgc-image/3d2c1ab91f794420b8ac27a0b15f2a29~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020075&x-signature=p9Pxy9%2BZmY1u6ogTQNO0GvWi42o%3D",
+        title: "城市夜景",
+        date: "2023-07-10",
+        albumId: 3,
+        albumName: "城市夜景"
+      },
+      {
+        id: 10,
+        url: "https://p11-doubao-search-sign.byteimg.com/labis/29ec78d26f9d4e47e139d737ef51622e~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020075&x-signature=iI7bCjnKoOqeQ24bdN1ZQDwjpSQ%3D",
+        title: "城市街景",
+        date: "2023-07-09",
+        albumId: 3,
+        albumName: "城市夜景"
+      },
+      {
+        id: 11,
+        url: "https://p11-doubao-search-sign.byteimg.com/pgc-image/5baaba1c30cc4151960ba169a01c8380~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020075&x-signature=vuq5ttz05mEwwOs7JVyYBCKz%2Bvo%3D",
+        title: "城市黄昏",
+        date: "2023-07-08",
+        albumId: 3,
+        albumName: "城市夜景"
+      }
+    ];
+    
+    const albumData = [
+      {
+        id: 1,
+        name: "山脉风光",
+        coverUrl: "https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1067458149459689544~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=jm9bv%2BWWEL8Ft1ZMXMMs5vkql%2BE%3D",
+        photoCount: 8,
+        createdAt: "2023-06-10",
+        updatedAt: "2023-07-15"
+      },
+      {
+        id: 2,
+        name: "海滩度假",
+        coverUrl: "https://p3-doubao-search-sign.byteimg.com/labis/d2e92ca1907969d408ae1decc50a11ee~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020076&x-signature=D0gjpqQ3GW%2FrScHrXByoBfyzGbw%3D",
+        photoCount: 6,
+        createdAt: "2023-05-22",
+        updatedAt: "2023-06-28"
+      },
+      {
+        id: 3,
+        name: "城市夜景",
+        coverUrl: "https://p11-doubao-search-sign.byteimg.com/pgc-image/3d2c1ab91f794420b8ac27a0b15f2a29~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1777020075&x-signature=p9Pxy9%2BZmY1u6ogTQNO0GvWi42o%3D",
+        photoCount: 10,
+        createdAt: "2023-06-15",
+        updatedAt: "2023-07-10"
+      }
+    ];
+    
+    // DOM 元素
+    const pageContent = document.getElementById('page-content');
+    const homePage = document.getElementById('home-page');
+    const albumsPage = document.getElementById('albums-page');
+    
+    const searchInput = document.getElementById('search-input');
+    const mobileSearchInput = document.getElementById('mobile-search-input');
+    const advancedFilterBtn = document.getElementById('advanced-filter-btn');
+    const sortBtn = document.getElementById('sort-btn');
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    const photoViewer = document.getElementById('photo-viewer');
+    const photoViewerImage = document.querySelector('.photo-viewer-image');
+    const photoViewerClose = document.querySelector('.photo-viewer-close');
+    const photoViewerPrev = document.querySelector('.photo-viewer-prev');
+    const photoViewerNext = document.querySelector('.photo-viewer-next');
+    const photoViewerInfo = document.querySelector('.photo-viewer-info');
+    
+  /* 已移除：创建相册按钮与模态框（用户要求删除“我的相册”模块） */
+    
+    
+    
+    const gridView = document.getElementById('grid-view');
+    
+    // 当前状态
+    let currentPage = 'home';
+    let currentPhotoIndex = 0;
+    
+    let searchQuery = '';
+    let sortBy = 'date'; // date, name, album
+    let sortOrder = 'desc'; // asc, desc
+    
+    
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化懒加载
+      initLazyLoading();
+      
+      // 初始化事件监听
+      initEventListeners();
+      
+      
+    });
+    
+    // 初始化懒加载
+    function initLazyLoading() {
+      const lazyImages = document.querySelectorAll('.lazy-image');
+      
+      if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const img = entry.target;
+              img.classList.add('loaded');
+              imageObserver.unobserve(img);
+            }
+          });
+        });
+        
+        lazyImages.forEach(img => {
+          imageObserver.observe(img);
+        });
+      /* 已移除与创建相册相关的事件监听（对应的 DOM 元素也已删除） */
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const page = this.getAttribute('data-page');
+          navigateTo(page);
+        });
+      });
+      
+      // 移动端导航链接点击事件
+      mobileNavLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const page = this.getAttribute('data-page');
+          navigateTo(page);
+          mobileMenu.classList.add('hidden');
+        });
+      });
+      
+      // 移动端菜单按钮点击事件
+      mobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+      });
+      
+      // 点击页面其他地方关闭下拉菜单
+      document.addEventListener('click', function(e) {
+        if (!mobileMenuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+          mobileMenu.classList.add('hidden');
+        }
+      });
+      
+      // 照片项点击事件
+      document.querySelectorAll('.photo-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const photoId = parseInt(this.getAttribute('data-photo-id'));
+          openPhotoViewer(photoId);
+        });
+      });
+      
+      // 照片查看器关闭按钮点击事件
+      photoViewerClose.addEventListener('click', closePhotoViewer);
+      
+      // 照片查看器上一张按钮点击事件
+      photoViewerPrev.addEventListener('click', showPrevPhoto);
+      
+      // 照片查看器下一张按钮点击事件
+      photoViewerNext.addEventListener('click', showNextPhoto);
+      
+      // 键盘事件
+      document.addEventListener('keydown', function(e) {
+        if (photoViewer.style.display === 'flex') {
+          if (e.key === 'Escape') {
+            closePhotoViewer();
+          } else if (e.key === 'ArrowLeft') {
+            showPrevPhoto();
+          } else if (e.key === 'ArrowRight') {
+            showNextPhoto();
+          }
+        }
+      });
+      
+      // 创建相册按钮点击事件
+      createAlbumBtn.addEventListener('click', function() {
+        createAlbumModal.classList.remove('hidden');
+      });
+      
+      
+      
+      // 关闭相册模态框
+      closeAlbumModal.addEventListener('click', function() {
+        createAlbumModal.classList.add('hidden');
+      });
+      
+      cancelAlbumBtn.addEventListener('click', function() {
+        createAlbumModal.classList.add('hidden');
+      });
+      
+      // 确认创建相册
+      confirmAlbumBtn.addEventListener('click', function() {
+        const albumName = document.getElementById('album-name-input').value;
+        if (albumName) {
+          // 模拟创建相册
+          alert('相册创建成功！');
+          createAlbumModal.classList.add('hidden');
+          // 清空输入
+          document.getElementById('album-name-input').value = '';
+          document.getElementById('album-description-input').value = '';
+        } else {
+          alert('请输入相册名称');
+        }
+      });
+      
+      // 点击模态框外部关闭
+      createAlbumModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.add('hidden');
+        }
+      });
+      
+      
+      
+      
+      
+      // 搜索框事件
+      searchInput.addEventListener('input', function() {
+        searchQuery = this.value.toLowerCase();
+        filterAndSearchPhotos();
+      });
+      
+      mobileSearchInput.addEventListener('input', function() {
+        searchQuery = this.value.toLowerCase();
+        filterAndSearchPhotos();
+      });
+      
+      
+      
+      // 排序按钮点击事件
+      sortBtn.addEventListener('click', function() {
+        // 创建并显示排序模态框
+        showSortModal();
+      });
+      
+      
+      
+      // 相册卡片交互已移除（模块已删除）
+    }
+    
+    // 导航到指定页面
+    function navigateTo(page) {
+      // 隐藏所有页面
+      document.querySelectorAll('.page-content').forEach(page => {
+        page.classList.add('hidden');
+      });
+      
+      // 显示目标页面
+      document.getElementById(`${page}-page`).classList.remove('hidden');
+      
+      // 更新当前页面
+      currentPage = page;
+      
+      // 更新导航链接状态
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-page') === page) {
+          link.classList.add('active');
+          link.classList.add('text-primary');
+        } else {
+          link.classList.remove('active');
+          link.classList.remove('text-primary');
+        }
+      });
+      
+      // 更新移动端导航链接状态
+      mobileNavLinks.forEach(link => {
+        if (link.getAttribute('data-page') === page) {
+          link.classList.add('active');
+          link.classList.add('text-primary');
+        } else {
+          link.classList.remove('active');
+          link.classList.remove('text-primary');
+        }
+      });
+      
+      // 如果是相册页面，重新初始化懒加载
+      if (page === 'albums') {
+        initLazyLoading();
+      }
+    }
+    
+    // 打开照片查看器
+    function openPhotoViewer(photoId) {
+      // 查找照片索引
+      const photoIndex = photoData.findIndex(photo => photo.id === photoId);
+      if (photoIndex !== -1) {
+        currentPhotoIndex = photoIndex;
+        updatePhotoViewer();
+        photoViewer.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // 防止背景滚动
+      }
+    }
+    
+    // 关闭照片查看器
+    function closePhotoViewer() {
+      photoViewer.style.display = 'none';
+      document.body.style.overflow = 'auto'; // 恢复背景滚动
+    }
+    
+    // 显示上一张照片
+    function showPrevPhoto() {
+      if (currentPhotoIndex > 0) {
+        currentPhotoIndex--;
+        updatePhotoViewer();
+      }
+    }
+    
+    // 显示下一张照片
+    function showNextPhoto() {
+      if (currentPhotoIndex < photoData.length - 1) {
+        currentPhotoIndex++;
+        updatePhotoViewer();
+      }
+    }
+    
+    // 更新照片查看器内容
+    function updatePhotoViewer() {
+      const photo = photoData[currentPhotoIndex];
+      photoViewerImage.src = photo.url;
+      photoViewerImage.alt = photo.title;
+      
+      // 更新照片信息
+      const infoTitle = photoViewerInfo.querySelector('h3');
+      const infoDate = photoViewerInfo.querySelector('p');
+      
+      infoTitle.textContent = photo.title;
+      infoDate.textContent = `拍摄于 ${photo.date} · ${photo.albumName}`;
+    }
+    
+    
+    
+    
+    
+    // 搜索照片
+    function filterAndSearchPhotos() {
+      const photoItems = document.querySelectorAll('.photo-item');
+      
+      photoItems.forEach(item => {
+        const photoId = parseInt(item.getAttribute('data-photo-id'));
+        const photo = photoData.find(p => p.id === photoId);
+        
+        // 搜索筛选
+        const searchMatch = !searchQuery || 
+          (photo && (photo.title.toLowerCase().includes(searchQuery) || 
+                   photo.albumName.toLowerCase().includes(searchQuery)));
+        
+        // 显示或隐藏照片
+        item.style.display = searchMatch ? 'block' : 'none';
+      });
+    }
+    
+    
+    
+    // 显示排序模态框
+    function showSortModal() {
+      // 创建模态框
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center';
+      modal.id = 'sort-modal';
+      
+      modal.innerHTML = `
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium">排序方式</h3>
+            <button class="text-gray-400 hover:text-white close-modal">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">排序依据</label>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="radio" id="sort-date" name="sort-by" value="date" ${sortBy === 'date' ? 'checked' : ''} class="mr-2">
+                  <label for="sort-date">拍摄日期</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="radio" id="sort-name" name="sort-by" value="name" ${sortBy === 'name' ? 'checked' : ''} class="mr-2">
+                  <label for="sort-name">照片名称</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="radio" id="sort-album" name="sort-by" value="album" ${sortBy === 'album' ? 'checked' : ''} class="mr-2">
+                  <label for="sort-album">相册名称</label>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">排序顺序</label>
+              <div class="flex space-x-4">
+                <div class="flex items-center">
+                  <input type="radio" id="sort-asc" name="sort-order" value="asc" ${sortOrder === 'asc' ? 'checked' : ''} class="mr-2">
+                  <label for="sort-asc">升序</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="radio" id="sort-desc" name="sort-order" value="desc" ${sortOrder === 'desc' ? 'checked' : ''} class="mr-2">
+                  <label for="sort-desc">降序</label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="pt-4 flex justify-end">
+              <button id="apply-sort-btn" class="glass-btn">
+                <span class="glass-btn-content">应用排序</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      document.body.style.overflow = 'hidden';
+      
+      // 添加事件监听
+      modal.querySelector('.close-modal').addEventListener('click', function() {
+        document.body.removeChild(modal);
+        document.body.style.overflow = 'auto';
+      });
+      
+      modal.querySelector('#apply-sort-btn').addEventListener('click', function() {
+        sortBy = modal.querySelector('input[name="sort-by"]:checked').value;
+        sortOrder = modal.querySelector('input[name="sort-order"]:checked').value;
+        
+        document.body.removeChild(modal);
+        document.body.style.overflow = 'auto';
+        
+        sortPhotos();
+      });
+      
+      // 点击模态框外部关闭
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          document.body.removeChild(modal);
+          document.body.style.overflow = 'auto';
+        }
+      });
+    }
+    
+    // 排序照片
+    function sortPhotos() {
+      // 获取当前视图中的照片项
+      const photoItems = Array.from(document.querySelectorAll('.photo-item'));
+      
+      // 根据排序条件对照片项进行排序
+      photoItems.sort((a, b) => {
+        const photoAId = parseInt(a.getAttribute('data-photo-id'));
+        const photoBId = parseInt(b.getAttribute('data-photo-id'));
+        const photoA = photoData.find(p => p.id === photoAId);
+        const photoB = photoData.find(p => p.id === photoBId);
+        
+        if (!photoA || !photoB) return 0;
+        
+        let comparison = 0;
+        
+        switch (sortBy) {
+          case 'date':
+            comparison = new Date(photoA.date) - new Date(photoB.date);
+            break;
+          case 'name':
+            comparison = photoA.title.localeCompare(photoB.title);
+            break;
+          case 'album':
+            comparison = photoA.albumName.localeCompare(photoB.albumName);
+            break;
+        }
+        
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+      
+      // 重新排列照片项 - 只使用网格视图
+      const container = gridView;
+      photoItems.forEach(item => {
+        container.appendChild(item);
+      });
+    }
+    
+    
+  </script>
+
+
+</body></html>
