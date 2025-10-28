@@ -327,8 +327,8 @@
     // 照片数据
     // 使用本地 images 文件夹中的 Image101.jpg 到 Image345.jpg
     // 会基于文件名自动生成照片数组，便于批量管理
-    const photos = Array.from({ length: 345 - 101 + 1 }, (_, idx) => {
-      const id = 101 + idx;
+    const photos = Array.from({ length: 345 - 58 + 1 }, (_, idx) => {
+      const id = 58 + idx;
       const filename = `Image${id}.jpg`;
       // 生成更友好的 title：去掉前缀 "Image"（若有），保留剩余部分
       const title = filename.replace(/^Image/i, '').replace(/\.jpg$/i, '');
