@@ -270,6 +270,21 @@
           <i class="fa fa-search mr-2"></i>搜索
         </button>
       </div>
+      <div class="ml-4 flex items-center space-x-3">
+        <!-- 当前排序提示 -->
+        <span id="sort-badge" class="text-sm text-gray-600">排序：按 id 降序</span>
+
+        <!-- 排序选择器 -->
+        <select id="sort-select" class="px-2 py-1 border rounded text-sm">
+          <option value="id-desc">按 id 降序</option>
+          <option value="id-asc">按 id 升序</option>
+          <option value="filename-desc">按文件名降序</option>
+          <option value="filename-asc">按文件名升序</option>
+        </select>
+
+        <!-- 添加照片按钮（打开模态） -->
+      
+      </div>
     </div>
   </header>
 
@@ -317,6 +332,198 @@
     </div>
   </div>
 
+  <!-- 添加 / 新增 照片模态 -->
+  <div id="add-photo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-60">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">添加新照片</h3>
+        <button id="add-photo-close" style="background:transparent;border:none;font-size:1.2rem;">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <label class="block text-sm">ID（可选，留空则自动分配）</label>
+        <input id="new-photo-id" type="number" class="w-full px-3 py-2 border rounded" placeholder="例如 346">
+
+        <label class="block text-sm">图片 URL（必须）</label>
+        <input id="new-photo-url" type="text" class="w-full px-3 py-2 border rounded" placeholder="images/Image346.jpg">
+
+        <label class="block text-sm">标题</label>
+        <input id="new-photo-title" type="text" class="w-full px-3 py-2 border rounded" placeholder="例如 新照片">
+
+        <label class="block text-sm">标签（逗号分隔）</label>
+        <input id="new-photo-tags" type="text" class="w-full px-3 py-2 border rounded" placeholder="人像,风景">
+
+        <div class="flex items-center justify-between">
+          <label class="text-sm"><input id="insert-top-checkbox" type="checkbox" class="mr-2">强制插入顶部</label>
+          <div>
+            <button id="add-photo-submit" class="search-btn px-3 py-1">添加到相册</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 在此处内嵌 photos.json（放在 JavaScript 运行前） -->
+  <script id="photos-json" type="application/json">
+[
+	{"id":62,"url":"images/image62.jpg","title":"62","tags":""},
+	{"id":63,"url":"images/Image63.jpg","title":"63","tags":""},
+	{"id":64,"url":"images/Image64.jpg","title":"64","tags":""},
+	{"id":65,"url":"images/Image65.jpg","title":"65","tags":""},
+	{"id":66,"url":"images/Image66.jpg","title":"66","tags":""},
+	{"id":67,"url":"images/Image67.jpg","title":"67","tags":""},
+	{"id":68,"url":"images/Image68.jpg","title":"68","tags":""},
+	{"id":69,"url":"images/Image69.jpg","title":"69","tags":""},
+	{"id":70,"url":"images/Image70.jpg","title":"70","tags":""},
+	{"id":71,"url":"images/Image71.jpg","title":"71","tags":""},
+	{"id":72,"url":"images/Image72.jpg","title":"72","tags":""},
+	{"id":73,"url":"images/Image73.jpg","title":"73","tags":""},
+	{"id":74,"url":"images/Image74.jpg","title":"74","tags":""},
+	{"id":75,"url":"images/Image75.jpg","title":"75","tags":""},
+	{"id":76,"url":"images/Image76.jpg","title":"76","tags":""},
+	{"id":77,"url":"images/Image77.jpg","title":"77","tags":""},
+	{"id":78,"url":"images/Image78.jpg","title":"78","tags":""},
+	{"id":79,"url":"images/Image79.jpg","title":"79","tags":""},
+	{"id":80,"url":"images/Image80.jpg","title":"80","tags":""},
+	{"id":81,"url":"images/Image81.jpg","title":"81","tags":""},
+	{"id":82,"url":"images/Image82.jpg","title":"82","tags":""},
+	{"id":83,"url":"images/Image83.jpg","title":"83","tags":""},
+	{"id":84,"url":"images/Image84.jpg","title":"84","tags":""},
+	{"id":85,"url":"images/Image85.jpg","title":"85","tags":""},
+	{"id":86,"url":"images/Image86.jpg","title":"86","tags":""},
+	{"id":87,"url":"images/Image87.jpg","title":"87","tags":""},
+	{"id":88,"url":"images/Image88.jpg","title":"88","tags":""},
+	{"id":89,"url":"images/Image89.jpg","title":"89","tags":""},
+	{"id":90,"url":"images/Image90.jpg","title":"90","tags":""},
+	{"id":91,"url":"images/Image91.jpg","title":"91","tags":""},
+	{"id":92,"url":"images/Image92.jpg","title":"92","tags":""},
+	{"id":93,"url":"images/Image92.jpg","title":"93","tags":""},
+	{"id":94,"url":"images/Image94.jpg","title":"94","tags":""},
+	{"id":95,"url":"images/Image95.jpg","title":"95","tags":""},
+	{"id":96,"url":"images/Image96.jpg","title":"96","tags":""},
+	{"id":97,"url":"images/Image97.jpg","title":"97","tags":""},
+	{"id":98,"url":"images/Image98.jpg","title":"98","tags":""},
+	{"id":99,"url":"images/Image99.jpg","title":"99","tags":""},
+	{"id":100,"url":"images/Image100.jpg","title":"100","tags":""},
+	{"id":101,"url":"images/Image101.jpg","title":"101","tags":""},
+	{"id":102,"url":"images/Image102.jpg","title":"102","tags":""},
+	{"id":103,"url":"images/Image103.jpg","title":"103","tags":""},
+	{"id":104,"url":"images/Image104.jpg","title":"104","tags":""},
+	{"id":105,"url":"images/Image105.jpg","title":"105","tags":""},
+	{"id":106,"url":"images/Image106.jpg","title":"106","tags":""},
+	{"id":107,"url":"images/Image107.jpg","title":"107","tags":""},
+	{"id":108,"url":"images/Image108.jpg","title":"108","tags":""},
+	{"id":109,"url":"images/Image109.jpg","title":"109","tags":""},
+	{"id":110,"url":"images/Image110.jpg","title":"110","tags":""},
+	{"id":111,"url":"images/Image111.jpg","title":"111","tags":""},
+	{"id":112,"url":"images/Image112.jpg","title":"112","tags":""},
+	{"id":113,"url":"images/Image113.jpg","title":"113","tags":""},
+	{"id":114,"url":"images/Image114.jpg","title":"114","tags":""},
+	{"id":115,"url":"images/Image115.jpg","title":"115","tags":""},
+	{"id":116,"url":"images/Image116.jpg","title":"116","tags":""},
+	{"id":117,"url":"images/Image117.jpg","title":"117","tags":""},
+	{"id":118,"url":"images/Image118.jpg","title":"118","tags":""},
+	{"id":119,"url":"images/Image119.jpg","title":"119","tags":""},
+	{"id":120,"url":"images/Image120.jpg","title":"120","tags":""},
+	{"id":121,"url":"images/Image121.jpg","title":"121","tags":""},
+	{"id":122,"url":"images/Image122.jpg","title":"122","tags":""},
+	{"id":123,"url":"images/Image123.jpg","title":"123","tags":""},
+	{"id":124,"url":"images/Image124.jpg","title":"124","tags":""},
+	{"id":125,"url":"images/Image125.jpg","title":"125","tags":""},
+	{"id":126,"url":"images/Image126.jpg","title":"126","tags":""},
+	{"id":127,"url":"images/Image127.jpg","title":"127","tags":""},
+	{"id":128,"url":"images/Image128.jpg","title":"128","tags":""},
+	{"id":129,"url":"images/Image129.jpg","title":"129","tags":""},
+	{"id":130,"url":"images/Image130.jpg","title":"130","tags":""},
+	{"id":131,"url":"images/Image131.jpg","title":"131","tags":""},
+	{"id":132,"url":"images/Image132.jpg","title":"132","tags":""},
+	{"id":133,"url":"images/Image133.jpg","title":"133","tags":""},
+	{"id":134,"url":"images/Image134.jpg","title":"134","tags":""},
+	{"id":135,"url":"images/Image135.jpg","title":"135","tags":""},
+	{"id":136,"url":"images/Image136.jpg","title":"136","tags":""},
+	{"id":137,"url":"images/Image137.jpg","title":"137","tags":""},
+	{"id":138,"url":"images/Image138.jpg","title":"138","tags":""},
+	{"id":139,"url":"images/Image139.jpg","title":"139","tags":""},
+	{"id":140,"url":"images/Image140.jpg","title":"140","tags":""},
+	{"id":141,"url":"images/Image141.jpg","title":"141","tags":""},
+	{"id":142,"url":"images/Image142.jpg","title":"142","tags":""},
+	{"id":143,"url":"images/Image143.jpg","title":"143","tags":""},
+	{"id":144,"url":"images/Image144.jpg","title":"144","tags":""},
+	{"id":145,"url":"images/Image145.jpg","title":"145","tags":""},
+	{"id":146,"url":"images/Image146.jpg","title":"146","tags":""},
+	{"id":147,"url":"images/Image147.jpg","title":"147","tags":""},
+	{"id":148,"url":"images/Image148.jpg","title":"148","tags":""},
+	{"id":149,"url":"images/Image149.jpg","title":"149","tags":""},
+	{"id":150,"url":"images/Image150.jpg","title":"150","tags":""},
+	{"id":151,"url":"images/Image151.jpg","title":"151","tags":""},
+	{"id":152,"url":"images/Image152.jpg","title":"152","tags":""},
+	{"id":153,"url":"images/Image153.jpg","title":"153","tags":""},
+	{"id":154,"url":"images/Image154.jpg","title":"154","tags":""},
+	{"id":155,"url":"images/Image155.jpg","title":"155","tags":""},
+	{"id":156,"url":"images/Image156.jpg","title":"156","tags":""},
+	{"id":157,"url":"images/Image157.jpg","title":"157","tags":""},
+	{"id":158,"url":"images/Image158.jpg","title":"158","tags":""},
+	{"id":159,"url":"images/Image159.jpg","title":"159","tags":""},
+	{"id":160,"url":"images/Image160.jpg","title":"160","tags":""},
+	{"id":161,"url":"images/Image161.jpg","title":"161","tags":""},
+	{"id":162,"url":"images/Image162.jpg","title":"162","tags":""},
+	{"id":163,"url":"images/Image163.jpg","title":"163","tags":""},
+	{"id":164,"url":"images/Image164.jpg","title":"164","tags":""},
+	{"id":165,"url":"images/Image165.jpg","title":"165","tags":""},
+	{"id":166,"url":"images/Image166.jpg","title":"166","tags":""},
+	{"id":167,"url":"images/Image167.jpg","title":"167","tags":""},
+	{"id":168,"url":"images/Image168.jpg","title":"168","tags":""},
+	{"id":169,"url":"images/Image169.jpg","title":"169","tags":""},
+	{"id":170,"url":"images/Image170.jpg","title":"170","tags":""},
+	{"id":171,"url":"images/Image171.jpg","title":"171","tags":""},
+	{"id":172,"url":"images/Image172.jpg","title":"172","tags":""},
+	{"id":173,"url":"images/Image173.jpg","title":"173","tags":""},
+	{"id":174,"url":"images/Image174.jpg","title":"174","tags":""},
+	{"id":175,"url":"images/Image175.jpg","title":"175","tags":""},
+	{"id":176,"url":"images/Image176.jpg","title":"176","tags":""},
+	{"id":177,"url":"images/Image177.jpg","title":"177","tags":""},
+	{"id":178,"url":"images/Image178.jpg","title":"178","tags":""},
+	{"id":179,"url":"images/Image179.jpg","title":"179","tags":""},
+	{"id":180,"url":"images/Image180.jpg","title":"180","tags":""},
+	{"id":181,"url":"images/Image181.jpg","title":"181","tags":""},
+	{"id":182,"url":"images/Image182.jpg","title":"182","tags":""},
+	{"id":183,"url":"images/Image183.jpg","title":"183","tags":""},
+	{"id":184,"url":"images/Image184.jpg","title":"184","tags":""},
+	{"id":185,"url":"images/Image185.jpg","title":"185","tags":""},
+	{"id":186,"url":"images/Image186.jpg","title":"186","tags":""},
+	{"id":187,"url":"images/Image187.jpg","title":"187","tags":""},
+	{"id":188,"url":"images/Image188.jpg","title":"188","tags":""},
+	{"id":189,"url":"images/Image189.jpg","title":"189","tags":""},
+	{"id":190,"url":"images/Image190.jpg","title":"190","tags":""},
+	{"id":191,"url":"images/Image191.jpg","title":"191","tags":""},
+	{"id":192,"url":"images/Image192.jpg","title":"192","tags":""},
+	{"id":193,"url":"images/Image193.jpg","title":"193","tags":""},
+	{"id":194,"url":"images/Image194.jpg","title":"194","tags":""},
+	{"id":195,"url":"images/Image195.jpg","title":"195","tags":""},
+	{"id":196,"url":"images/Image196.jpg","title":"196","tags":""},
+	{"id":197,"url":"images/Image197.jpg","title":"197","tags":""},
+	{"id":198,"url":"images/Image198.jpg","title":"198","tags":""},
+	{"id":199,"url":"images/Image199.jpg","title":"199","tags":""},
+	{"id":200,"url":"images/Image200.jpg","title":"200","tags":""},
+	{"id":201,"url":"images/Image201.jpg","title":"201","tags":""},
+	{"id":202,"url":"images/Image202.jpg","title":"202","tags":""},
+	{"id":203,"url":"images/Image203.jpg","title":"203","tags":""},
+	{"id":204,"url":"images/Image204.jpg","title":"204","tags":""},
+	{"id":205,"url":"images/Image205.jpg","title":"205","tags":""},
+	{"id":206,"url":"images/Image206.jpg","title":"206","tags":""},
+	{"id":207,"url":"images/Image207.jpg","title":"207","tags":""},
+	{"id":208,"url":"images/Image208.jpg","title":"208","tags":""},
+	{"id":209,"url":"images/Image209.jpg","title":"209","tags":""},
+	{"id":210,"url":"images/Image210.jpg","title":"210","tags":""},
+	{"id":211,"url":"images/Image211.jpg","title":"211","tags":""},
+	{"id":212,"url":"images/Image212.jpg","title":"212","tags":""},
+	{"id":213,"url":"images/Image213.jpg","title":"213","tags":""},
+	{"id":214,"url":"images/Image214.jpg","title":"214","tags":""},
+	{"id":215,"url":"images/Image215.jpg","title":"215","tags":""},
+	{"id":216,"url":"images/Image216.jpg","title":"216","tags":""},
+	{"id":217,"url":"images/Image217.jpg","title":"217","tags":""}
+]
+</script>
+
   <!-- JavaScript -->
   <script>
     /**
@@ -324,21 +531,44 @@
      * 功能：照片数据管理、搜索功能、滚动加载、交互效果
      */
 
-    // 照片数据
-    // 使用本地 images 文件夹中的 Image101.jpg 到 Image345.jpg
-    // 会基于文件名自动生成照片数组，便于批量管理
-    const photos = Array.from({ length: 345 - 62 + 1 }, (_, idx) => {
-      const id = 62 + idx;
-      const filename = `Image${id}.jpg`;
-      // 生成更友好的 title：去掉前缀 "Image"（若有），保留剩余部分
-      const title = filename.replace(/^Image/i, '').replace(/\.jpg$/i, '');
-      return {
-        id,
-        url: `images/${filename}`,
-        title: title || String(id),
-        tags: ''
-      };
-    });
+    // 照片数据：从外部元数据文件 photos.json 加载，方便后期改名和维护
+    // photos.json 应包含 [{ id, url, title, tags }, ...]
+    let photos = [];
+
+    // 异步加载元数据。如果加载失败（例如在本地直接打开文件时），
+    // 会回退到按 Image62..Image345 自动生成的默认列表，保证站点可用。
+    async function loadPhotoMetadata() {
+      try {
+        // 优先从页面内嵌的 JSON 读取（id="photos-json"）
+        const embedded = document.getElementById('photos-json');
+        if (embedded && embedded.textContent.trim()) {
+          const data = JSON.parse(embedded.textContent);
+          if (!Array.isArray(data)) throw new Error('内嵌 photos.json 必须是数组');
+          // 按 id 降序排序：确保 id 更大的照片显示在前面（顶部）
+          photos = data.sort((a, b) => (b.id || 0) - (a.id || 0));
+          return;
+        }
+
+        // 若内嵌不存在，尝试 fetch 本地 photos.json（保留原有行为）
+        const res = await fetch('photos.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('无法加载 photos.json: ' + res.status);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error('photos.json 必须是数组');
+        photos = data;
+      } catch (err) {
+        console.warn('加载 photos.json 失败，使用回退列表：', err);
+        // 回退生成时也按 id 降序（从大到小），保证与内嵌 JSON 一致
+        const maxId = 345;
+        const minId = 62;
+        const len = maxId - minId + 1;
+        photos = Array.from({ length: len }, (_, idx) => {
+          const id = maxId - idx; // 从 maxId 递减到 minId
+          const filename = `Image${id}.jpg`;
+          const title = filename.replace(/^Image/i, '').replace(/\.jpg$/i, '') || String(id);
+          return { id, url: `images/${filename}`, title, tags: '' };
+        });
+      }
+    }
 
     // 可选：配置 CDN 加速基础 URL（例如: "https://cdn.example.com/assets"），
     // 若留空则使用相对路径（本地 images/）
@@ -380,7 +610,8 @@
   // 全局变量
     let currentPage = 1;
     const photosPerPage = 8;
-    let filteredPhotos = [...photos];
+    // 在加载元数据后由 loadPhotoMetadata 初始化
+    let filteredPhotos = [];
     let isLoading = false;
     let isSearchActive = false;
   // Lightbox 当前索引（在 photos 数组中的全局索引）
@@ -401,7 +632,11 @@
   const lightboxNext = document.getElementById('lightbox-next');
 
     // 初始化
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+      // 先异步加载图片元数据（photos.json 或回退生成）
+      await loadPhotoMetadata();
+      // 设置过滤数组为全部照片，随后 loadPhotos 会根据分页加载
+      filteredPhotos = [...photos];
       // 加载初始照片
       loadPhotos();
       // 添加“加载更多”按钮事件监听
@@ -472,12 +707,13 @@
         // 隐藏无结果提示
         noResults.classList.add('hidden');
         
-            // 创建照片卡片并添加到容器（传入全局索引以便 Lightbox 导航）
-            photosToShow.forEach((photo, i) => {
-              const globalIndex = startIndex + i;
-              const photoCard = createPhotoCard(photo, globalIndex);
-              photoContainer.appendChild(photoCard);
-            });
+            // 创建照片卡片并添加到容器（传入在原始 photos 数组中的全局索引以便 Lightbox 导航）
+                photosToShow.forEach((photo) => {
+                  // 计算该 photo 在原始 photos 数组中的索引，保证在过滤/搜索后仍能正确映射
+                  const globalIndex = photos.findIndex(p => p.id === photo.id);
+                  const photoCard = createPhotoCard(photo, globalIndex);
+                  photoContainer.appendChild(photoCard);
+                });
         
         // 隐藏加载指示器
         loader.classList.add('hidden');
@@ -532,11 +768,9 @@
 
       // 打开 Lightbox 并设置为指定全局索引
       function openLightboxByIndex(index) {
-        if (index < 0 || index >= filteredPhotos.length) return;
-        // filteredPhotos 是当前过滤后的数组（与 photos 的映射可能不同）
-        // 我们需要找到在原始 photos 中对应的全局索引
-        // 因为我们在创建卡片时传入的 globalIndex 是基于原始 photos 的索引，
-        // 为简单起见，这里保持 currentLightboxIndex 为传入的 index（它来自创建时的 globalIndex）。
+        // index 是传入的原始 photos 数组索引（createPhotoCard 已保证如此），
+        // 因此这里应以原始 photos 长度作为边界检查。
+        if (index < 0 || index >= photos.length) return;
         currentLightboxIndex = index;
         const photo = photos[currentLightboxIndex];
         if (!photo) return;
@@ -629,6 +863,163 @@
       // 滚动到顶部
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // ---------------------------
+    // 排序与添加照片功能
+    // ---------------------------
+    // 排序模式：id-desc（默认）, id-asc, filename-desc, filename-asc
+    let sortMode = 'id-desc';
+    const sortSelect = document.getElementById('sort-select');
+    const sortBadge = document.getElementById('sort-badge');
+
+    function updateSortBadge() {
+      const map = {
+        'id-desc': '按 id 降序',
+        'id-asc': '按 id 升序',
+        'filename-desc': '按文件名降序',
+        'filename-asc': '按文件名升序'
+      };
+      sortBadge.textContent = '排序：' + (map[sortMode] || sortMode);
+    }
+
+    function filenameNumber(name) {
+      // 从文件名中提取数字部分，例如 Image123.jpg -> 123
+      const m = (name || '').match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : NaN;
+    }
+
+    function applySortToPhotos(mode) {
+      sortMode = mode || sortMode;
+      // 对原始 photos 数组排序（不直接改变服务器数据）
+      switch (sortMode) {
+        case 'id-desc':
+          photos.sort((a, b) => (b.id || 0) - (a.id || 0));
+          break;
+        case 'id-asc':
+          photos.sort((a, b) => (a.id || 0) - (b.id || 0));
+          break;
+        case 'filename-desc':
+          photos.sort((a, b) => {
+            const na = filenameNumber(a.url || a.name || '');
+            const nb = filenameNumber(b.url || b.name || '');
+            if (isNaN(na) && isNaN(nb)) return 0;
+            if (isNaN(na)) return 1;
+            if (isNaN(nb)) return -1;
+            return nb - na;
+          });
+          break;
+        case 'filename-asc':
+          photos.sort((a, b) => {
+            const na = filenameNumber(a.url || a.name || '');
+            const nb = filenameNumber(b.url || b.name || '');
+            if (isNaN(na) && isNaN(nb)) return 0;
+            if (isNaN(na)) return 1;
+            if (isNaN(nb)) return -1;
+            return na - nb;
+          });
+          break;
+        default:
+          break;
+      }
+
+      // 重新应用过滤并重置分页
+      filteredPhotos = [...photos];
+      updateSortBadge();
+      loadPhotos(true);
+    }
+
+    // 排序选择器事件
+    if (sortSelect) {
+      sortSelect.addEventListener('change', (e) => {
+        applySortToPhotos(e.target.value);
+      });
+    }
+
+    // 初始化显示排序
+    updateSortBadge();
+
+    // 添加照片模态逻辑
+    const addPhotoBtn = document.getElementById('add-photo-btn');
+    const addPhotoModal = document.getElementById('add-photo-modal');
+    const addPhotoClose = document.getElementById('add-photo-close');
+    const addPhotoSubmit = document.getElementById('add-photo-submit');
+    const newPhotoIdInput = document.getElementById('new-photo-id');
+    const newPhotoUrlInput = document.getElementById('new-photo-url');
+    const newPhotoTitleInput = document.getElementById('new-photo-title');
+    const newPhotoTagsInput = document.getElementById('new-photo-tags');
+    const insertTopCheckbox = document.getElementById('insert-top-checkbox');
+
+    function openAddPhotoModal() {
+      if (addPhotoModal) addPhotoModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeAddPhotoModal() {
+      if (addPhotoModal) addPhotoModal.classList.add('hidden');
+      document.body.style.overflow = '';
+      // 清空表单
+      newPhotoIdInput.value = '';
+      newPhotoUrlInput.value = '';
+      newPhotoTitleInput.value = '';
+      newPhotoTagsInput.value = '';
+      insertTopCheckbox.checked = false;
+    }
+
+    if (addPhotoBtn) addPhotoBtn.addEventListener('click', openAddPhotoModal);
+    if (addPhotoClose) addPhotoClose.addEventListener('click', closeAddPhotoModal);
+
+    // 提交添加
+    if (addPhotoSubmit) addPhotoSubmit.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = newPhotoUrlInput.value.trim();
+      if (!url) {
+        alert('图片 URL 为必填');
+        return;
+      }
+      // 解析 id 或自动分配
+      let newId = parseInt(newPhotoIdInput.value, 10);
+      if (isNaN(newId) || newId <= 0) {
+        // 尝试用当前最大 id + 1
+        const maxId = photos.reduce((m, p) => Math.max(m, p.id || 0), 0);
+        newId = maxId + 1;
+      }
+
+      const title = newPhotoTitleInput.value.trim() || `Image${newId}`;
+      const tags = newPhotoTagsInput.value.trim() || '';
+
+      const newPhoto = { id: newId, url, title, tags };
+
+      // 冲突检测：如果 id 已存在，提示并替换/跳过
+      const existingIndex = photos.findIndex(p => p.id === newId);
+      if (existingIndex !== -1) {
+        if (!confirm('检测到相同 ID 的照片，是否用新数据替换原有照片？')) {
+          return;
+        }
+        photos.splice(existingIndex, 1, newPhoto);
+      } else {
+        // 如果勾选强制插入顶部，则 unshift
+        if (insertTopCheckbox.checked) {
+          photos.unshift(newPhoto);
+        } else {
+          // 自动检测：如果新 id 大于当前最大 id，则认为是最新，放到顶部
+          const maxId = photos.reduce((m, p) => Math.max(m, p.id || 0), 0);
+          if (newId > maxId) {
+            photos.unshift(newPhoto);
+          } else {
+            photos.push(newPhoto);
+          }
+        }
+      }
+
+      // 根据当前排序模式重新排序并渲染
+      applySortToPhotos(sortMode);
+
+      closeAddPhotoModal();
+    });
+
+    // 点击遮罩也可关闭添加模态
+    if (addPhotoModal) addPhotoModal.addEventListener('click', (e) => {
+      if (e.target === addPhotoModal) closeAddPhotoModal();
+    });
   </script>
 </body>
 </html>
